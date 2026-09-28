@@ -1,0 +1,16 @@
+const museum=['Welkom in Lanjarón','Welkom in Museo de la Miel','De didactische tuin','Historische bijenkorven','De 17e-eeuwse waspers','De wereld van de honingbij','Van bloem tot honing','De imker en de moderne bijenkast','De honing uit Lanjarón en de Alpujarras'];
+const wandeling=['Balneario de Lanjarón','Op weg naar het kasteel','Castillo de Lanjarón','Iglesia de la Encarnación','Plaza de la Constitución','Barrio Hondillo, het oudste hart van Lanjarón','Portal de las Chispas','Tinao del Tío Pedro','Placetilla Colorá','Ermita de San Roque','Poëziefontein van Federico García Lorca'];
+const photos={museum:{1:'jpg',2:'jpg',3:'jpeg',4:'jpeg',5:'jpg',6:'jpg',7:'jpeg',8:'jpg',9:'jpeg'},wandeling:{1:'jpeg',2:'jpg',3:'jpg',4:'jpeg',5:'jpeg',6:'jpg',7:'jpg',8:'jpg',9:'jpg',10:'jpg',11:'jpg'}};
+for(const [section,titles] of Object.entries({museum,wandeling})){
+ const grid=document.getElementById(`${section}-grid`);
+ titles.forEach((title,i)=>{const n=i+1;const num=String(n).padStart(2,'0');const card=document.createElement('article');card.className='card';card.id=`${section}-${num}`;
+ const img=document.createElement('img');img.src=`assets/photos/${section}/${num}.${photos[section][n]}`;img.alt=title;img.loading='lazy';
+ const body=document.createElement('div');body.className='card-body';const label=document.createElement('div');label.className='number';label.textContent=`Audio ${n}`;const heading=document.createElement('h3');heading.textContent=title;
+ const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=`assets/audio/${section}/${num}.mp3`;audio.setAttribute('aria-label',`Beluister ${title}`);
+ audio.addEventListener('play',()=>document.querySelectorAll('audio').forEach(other=>{if(other!==audio)other.pause()}));body.append(label,heading,audio);card.append(img,body);grid.append(card)})}
+// The route is loaded when assets/route.gpx has been supplied.
+fetch('assets/route.gpx').then(r=>{if(!r.ok)throw Error('Geen GPX');return r.text()}).then(xml=>{
+ const doc=new DOMParser().parseFromString(xml,'application/xml');const points=[...doc.querySelectorAll('trkpt, rtept')].map(p=>[Number(p.getAttribute('lat')),Number(p.getAttribute('lon'))]).filter(p=>p.every(Number.isFinite));if(points.length<2)return;
+ const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.append(css);
+ const js=document.createElement('script');js.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';js.onload=()=>{const el=document.getElementById('map');el.hidden=false;const map=L.map(el);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap-bijdragers',maxZoom:19}).addTo(map);const line=L.polyline(points,{color:'#ba772c',weight:5}).addTo(map);map.fitBounds(line.getBounds(),{padding:[24,24]});L.marker(points[0]).addTo(map).bindPopup('Start van de route');L.marker(points.at(-1)).addTo(map).bindPopup('Einde van de route');document.getElementById('route-note').textContent='Bekijk de route op de kaart of download het GPX-bestand voor onderweg.';document.getElementById('gpx-link').hidden=false;};document.body.append(js);
+}).catch(()=>{});
